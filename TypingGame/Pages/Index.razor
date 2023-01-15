@@ -1,0 +1,125 @@
+﻿@page "/"
+@using TypingGame.Models
+
+<style>
+    .game-text {
+        font-size: 72px;
+        font-weight: bold;
+        margin-right: 4px;
+    }
+
+    .correct {
+        color: green;
+    }
+
+    .wrong {
+        color: red;
+    }
+</style>
+
+<div @ref="parentDiv" @onkeydown="OnType" tabindex="0">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    @for(var ch = 0; ch < generatedChar.Length; ch++)
+                    {
+                        <span class="game-text @status[ch]">
+                            @generatedChar[ch]
+                        </span>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <span>Correct: @stats.Correct</span>
+                    <span>Missed: @stats.Missed</span>
+                    <span>Total: @stats.Total</span>
+                    <span>Accuracy: @stats.Accuracy%</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    string alphabet = "QWERTYUIOPLKJHGFDSAZXCVBNM";
+    char[] generatedChar = new char[7];
+    string[] status = new string[7];
+
+    Random random = new Random();
+
+    Stats stats;//Menginisialisasi objek class Stats
+
+    //Mereferensikan/memfokuskan ke div parent
+    public ElementReference parentDiv;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            await parentDiv.FocusAsync();
+    }
+    //
+
+    private void SetUpGame()
+    {
+        stats = new Stats();//Membuat objek class Stats
+        stats.Correct   = 0;
+        stats.Missed    = 0;
+        stats.Total     = 0;
+        stats.Accuracy  = 0;
+
+        GenerateChar();
+    }//Restart Game
+
+    protected override void OnInitialized()
+    {
+        SetUpGame();
+    }//Memuat halaman pertama kali
+
+    int cursor = 0;
+    public void OnType(KeyboardEventArgs e)
+    {
+        if(e.Key == generatedChar[cursor].ToString().ToLower())
+        {
+            stats.Correct++;//Correct bertambah
+            status[cursor] = "correct";//Menambahkan class "correct" ke span sesuai index/cursor-nya
+            cursor++; //cursor bertambah/pindah
+        }//Kondisi ketika tombol keyboard (hurufnya menjadi kecil) = huruf yang disorot
+        else
+        {
+            stats.Missed++;//Missed bertambah
+            status[cursor] = "wrong";//Menambah class "wrong" ke span sesuai index/cursor-nya
+        }//Kondisi ketika tombol keyboard != huruf yang disorot
+
+        if(cursor == generatedChar.Length)
+        {
+            status = new string[7];//Membuat array status baru (mereset benar/salah dan warna hurufnya)
+            cursor = 0;//Reset kursor
+            GenerateChar();//Reset random huruf
+        }//Kondisi ketika setelah huruf terakhir
+
+        if(stats.Missed == 5)
+        {
+            SetUpGame();
+            status = new string[7];
+            cursor = 0;
+        }//Kondisi ketika salah 5x
+
+        stats.CountTotal();//Menghitung Total
+        stats.CountAccuracy();//Menghitung Accuracy 
+    }//Method ketika tekan tombol keyboard
+
+    public void GenerateChar()
+    {
+        for (int i = 0; i < 7; i++)
+        {
+            generatedChar[i] = alphabet[random.Next(alphabet.Length)];//Menampung huruf yang dirandom dari variabel alphabet ke index array generatedChar
+        }
+    }//Random huruf
+}
